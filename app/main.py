@@ -89,6 +89,12 @@ async def generate(
             episode=episode,
             game_logo_bytes=game_logo_bytes,
             size=(max(640, min(3840, width)), max(360, min(2160, height))),
+            style=style,
+            strength=strength,
+            edge_color_hex=edge_color,
+            edge_alpha=edge_alpha,
+            overlay_hex=overlay_color,
+            overlay_alpha=overlay_alpha,
         )
     except Exception as e:
         raise HTTPException(400, f"processing error: {e}")

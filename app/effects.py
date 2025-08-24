@@ -29,29 +29,27 @@ def comicify(
     style: "game" | "photo" | "avatar"
     strength: 1..3
     """
-    if style not in {"game", "photo", "avatar"}:
-        style = "game"
-    try:
-        strength = int(strength)
-    except Exception:
-        strength = StrengthEnum.normal
-    strength = StrengthEnum.normal if strength < StrengthEnum.weak else StrengthEnum.strong if strength > StrengthEnum.strong else strength
-
-    # ---- style knobs ----
     if style == StyleEnum.game:
-        k_colors =    {1:14, 2:10, 3:7}[strength]
-        band_levels = {1:8,  2:6,  3:4}[strength]
-        edge_th =     {1:(70,140), 2:(60,120), 3:(50,100)}[strength]
-        min_area =    {1:20, 2:30, 3:50}[strength]
-        thicken =     {1:1,  2:2,  3:3}[strength]
-        sat_gain =    {1:1.08, 2:1.15, 3:1.20}[strength]
-        gamma =       {1:1.05, 2:1.08, 3:1.10}[strength]
+        params = {
+            StrengthEnum.weak: dict(k_colors=14, band_levels=8, edge_th=(80, 160), min_area=20, thicken=1,
+                                    sat_gain=1.06, gamma=1.03),
+            StrengthEnum.normal: dict(k_colors=10, band_levels=6, edge_th=(60, 120), min_area=30, thicken=2,
+                                      sat_gain=1.12, gamma=1.06),
+            StrengthEnum.strong: dict(k_colors=7, band_levels=4, edge_th=(45, 90), min_area=50, thicken=3,
+                                      sat_gain=1.18, gamma=1.10),
+        }[strength]
     elif style == StyleEnum.avatar:
-        # keep your existing fixed avatar tuning
-        k_colors, band_levels, edge_th, min_area, thicken, sat_gain, gamma = 8, 5, (80,160), 10, 2, 1.15, 1.05
-    else:  # photo
-        # keep your existing fixed photo tuning
-        k_colors, band_levels, edge_th, min_area, thicken, sat_gain, gamma = 12, 6, (70,140), 60, 1, 1.12, 1.12
+        params = dict(k_colors=8, band_levels=5, edge_th=(80, 160), min_area=10, thicken=2, sat_gain=1.15, gamma=1.05)
+    else:  # photo (subtle defaults; adjust if you want strength here too)
+        params = dict(k_colors=12, band_levels=6, edge_th=(70, 140), min_area=60, thicken=1, sat_gain=1.12, gamma=1.12)
+
+    k_colors = params["k_colors"]
+    band_levels = params["band_levels"]
+    edge_th = params["edge_th"]
+    min_area = params["min_area"]
+    thicken = params["thicken"]
+    sat_gain = params["sat_gain"]
+    gamma = params["gamma"]
 
     # ---- 1) smooth + LAB chroma quantize + L banding (cel shade) ----
     sm = cv2.bilateralFilter(im_bgr, d=9, sigmaColor=90, sigmaSpace=90)
