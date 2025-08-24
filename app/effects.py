@@ -1,7 +1,6 @@
 import cv2, numpy as np
 
-from .enums import StyleOptions
-from .types import Strength
+from .enums import StyleEnum, StrengthEnum
 
 def _hex_to_bgr(hexstr: str) -> tuple[int, int, int]:
     """#RRGGBB -> (B,G,R)"""
@@ -18,8 +17,8 @@ def _gamma(bgr: np.ndarray, g: float) -> np.ndarray:
 
 def comicify(
     im_bgr: np.ndarray,
-    style: StyleOptions = StyleOptions.game,
-    strength: Strength = 2,
+    style: StyleEnum = StyleEnum.game,
+    strength: StrengthEnum = StrengthEnum.normal,
     edge_color_hex: str = "#000000",
     edge_alpha: float = 1.0,
     overlay_hex: str | None = None,
@@ -35,11 +34,11 @@ def comicify(
     try:
         strength = int(strength)
     except Exception:
-        strength = 2
-    strength = 1 if strength < 1 else 3 if strength > 3 else strength
+        strength = StrengthEnum.normal
+    strength = StrengthEnum.normal if strength < StrengthEnum.weak else StrengthEnum.strong if strength > StrengthEnum.strong else strength
 
     # ---- style knobs ----
-    if style == StyleOptions.game:
+    if style == StyleEnum.game:
         k_colors =    {1:14, 2:10, 3:7}[strength]
         band_levels = {1:8,  2:6,  3:4}[strength]
         edge_th =     {1:(70,140), 2:(60,120), 3:(50,100)}[strength]
@@ -47,7 +46,7 @@ def comicify(
         thicken =     {1:1,  2:2,  3:3}[strength]
         sat_gain =    {1:1.08, 2:1.15, 3:1.20}[strength]
         gamma =       {1:1.05, 2:1.08, 3:1.10}[strength]
-    elif style == StyleOptions.avatar:
+    elif style == StyleEnum.avatar:
         # keep your existing fixed avatar tuning
         k_colors, band_levels, edge_th, min_area, thicken, sat_gain, gamma = 8, 5, (80,160), 10, 2, 1.15, 1.05
     else:  # photo

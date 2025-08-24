@@ -1,38 +1,39 @@
 import numpy as np
 import cv2
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import Response
+from typing import Optional
 
 from .effects import comicify
 from .compose import build_thumbnail_png
-from .enums import StyleOptions
-from .types import Strength
+from .enums import StyleEnum, StrengthEnum
 
 app = FastAPI(title="ThumbGen API", version="0.3.0")
+ALLOWED = {"image/png", "image/jpeg"}
 
 @app.get("/health")
 def health():
     return {"ok": True}
 
-ALLOWED = {"image/png", "image/jpeg"}
-
 @app.post("/v1/generate", response_class=Response)
 async def generate(
     screenshot: UploadFile = File(...),
     logo: UploadFile = File(...),
-    title: str = Form(...),
-    season: int = Form(1),
-    episode: int = Form(1),
-    style: StyleOptions = StyleOptions.game,
-    strength: Strength = 2,
+    season: int = Form(...),
+    episode: int = Form(...),
+    game_logo: Optional[UploadFile] = File(None),
+    title: Optional[str] = Form(None),
+    style: StyleEnum = Form(StyleEnum.game),
+    strength: StrengthEnum = Form(StrengthEnum.normal),
+
     edge_color: str = Form("#000000"),
     edge_alpha: float = Form(1.0),
     overlay_color: str | None = Form(None),
     overlay_alpha: float = Form(0.0),
     width: int = Form(1280),
     height: int = Form(720),
-    is_test: bool = Form(False),
+    is_test: bool = Form(False)
 ):
     if screenshot.content_type not in ALLOWED:
         raise HTTPException(400, "screenshot must be PNG or JPEG")
@@ -41,6 +42,7 @@ async def generate(
 
     shot_bytes = await screenshot.read()
     logo_bytes = await logo.read()
+    game_logo_bytes = await game_logo.read() if game_logo else None
 
     # Decode original
     arr = np.frombuffer(shot_bytes, np.uint8)
@@ -85,6 +87,7 @@ async def generate(
             title=title,
             season=season,
             episode=episode,
+            game_logo_bytes=game_logo_bytes,
             size=(max(640, min(3840, width)), max(360, min(2160, height))),
         )
     except Exception as e:
