@@ -2,7 +2,7 @@ from pathlib import Path
 from functools import lru_cache
 from PIL import ImageFont
 
-ASSETS_DIR = Path(__file__).parent / "fonts"
+ASSETS_DIR = Path(__file__).resolve().parents[1] / "fonts"
 DEFAULT_TITLE_FONT = ASSETS_DIR / "ChakraPetch-Regular.ttf"
 DEFAULT_SE_FONT    = ASSETS_DIR / "ChakraPetch-SemiBold.ttf"
 
