@@ -1,10 +1,13 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import Response
 import numpy as np
 import cv2
 
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
+from fastapi.responses import Response
+
 from .effects import comicify
 from .compose import build_thumbnail_png
+from .enums import StyleOptions
+from .types import Strength
 
 app = FastAPI(title="ThumbGen API", version="0.3.0")
 
@@ -21,8 +24,8 @@ async def generate(
     title: str = Form(...),
     season: int = Form(1),
     episode: int = Form(1),
-    style: str = Form("game"),
-    strength: int = Form(3),  # 1..3
+    style: StyleOptions = StyleOptions.game,
+    strength: Strength = 2,
     edge_color: str = Form("#000000"),
     edge_alpha: float = Form(1.0),
     overlay_color: str | None = Form(None),

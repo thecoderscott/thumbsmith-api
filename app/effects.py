@@ -1,5 +1,8 @@
 import cv2, numpy as np
 
+from .enums import StyleOptions
+from .types import Strength
+
 def _hex_to_bgr(hexstr: str) -> tuple[int, int, int]:
     """#RRGGBB -> (B,G,R)"""
     hx = hexstr.lstrip("#")
@@ -15,33 +18,40 @@ def _gamma(bgr: np.ndarray, g: float) -> np.ndarray:
 
 def comicify(
     im_bgr: np.ndarray,
-    style: str = "game",
-    strength: int = 2,
-
-    # NEW:
+    style: StyleOptions = StyleOptions.game,
+    strength: Strength = 2,
     edge_color_hex: str = "#000000",
-    edge_alpha: float = 1.0,          # 0..1 (1 = pure ink)
-    overlay_hex: str | None = None,   # e.g. "#FFD54F"
-    overlay_alpha: float = 0.0,       # 0..1 (0.15 ≈ 15%)
+    edge_alpha: float = 1.0,
+    overlay_hex: str | None = None,
+    overlay_alpha: float = 0.0,
 ):
     """
     Cel-shaded comic look with configurable edge colour/opacity and optional overlay.
     style: "game" | "photo" | "avatar"
     strength: 1..3
     """
+    if style not in {"game", "photo", "avatar"}:
+        style = "game"
+    try:
+        strength = int(strength)
+    except Exception:
+        strength = 2
+    strength = 1 if strength < 1 else 3 if strength > 3 else strength
 
-    # ---- style knobs (same as we used before) ----
-    if style == "game":
-        k_colors = {1:14, 2:10, 3:7}[strength]
+    # ---- style knobs ----
+    if style == StyleOptions.game:
+        k_colors =    {1:14, 2:10, 3:7}[strength]
         band_levels = {1:8,  2:6,  3:4}[strength]
         edge_th =     {1:(70,140), 2:(60,120), 3:(50,100)}[strength]
         min_area =    {1:20, 2:30, 3:50}[strength]
         thicken =     {1:1,  2:2,  3:3}[strength]
         sat_gain =    {1:1.08, 2:1.15, 3:1.20}[strength]
         gamma =       {1:1.05, 2:1.08, 3:1.10}[strength]
-    elif style == "avatar":
+    elif style == StyleOptions.avatar:
+        # keep your existing fixed avatar tuning
         k_colors, band_levels, edge_th, min_area, thicken, sat_gain, gamma = 8, 5, (80,160), 10, 2, 1.15, 1.05
     else:  # photo
+        # keep your existing fixed photo tuning
         k_colors, band_levels, edge_th, min_area, thicken, sat_gain, gamma = 12, 6, (70,140), 60, 1, 1.12, 1.12
 
     # ---- 1) smooth + LAB chroma quantize + L banding (cel shade) ----
