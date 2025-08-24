@@ -2,12 +2,18 @@ import cv2, numpy as np
 
 from .enums import StyleEnum, StrengthEnum
 
+def _clamp01(x: float) -> float:
+    try: x = float(x)
+    except Exception: x = 0.0
+    return 0.0 if x < 0.0 else 1.0 if x > 1.0 else x
+
 def _hex_to_bgr(hexstr: str) -> tuple[int, int, int]:
-    """#RRGGBB -> (B,G,R)"""
-    hx = hexstr.lstrip("#")
-    if len(hx) != 6:
-        raise ValueError("overlay/edge color must be #RRGGBB")
-    r = int(hx[0:2], 16); g = int(hx[2:4], 16); b = int(hx[4:6], 16)
+    s = hexstr.strip().lstrip("#")
+    if len(s) == 3:
+        s = "".join(ch*2 for ch in s)
+    if len(s) != 6:
+        raise ValueError("overlay/edge color must be #RGB or #RRGGBB")
+    r, g, b = int(s[0:2],16), int(s[2:4],16), int(s[4:6],16)
     return b, g, r
 
 def _gamma(bgr: np.ndarray, g: float) -> np.ndarray:
@@ -24,6 +30,9 @@ def comicify(
     overlay_hex: str | None = None,
     overlay_alpha: float = 0.0,
 ):
+    edge_alpha = _clamp01(edge_alpha)
+    overlay_alpha = _clamp01(overlay_alpha)
+
     """
     Cel-shaded comic look with configurable edge colour/opacity and optional overlay.
     style: "game" | "photo" | "avatar"
@@ -100,8 +109,15 @@ def comicify(
         out = np.clip(src, 0, 255).astype(np.uint8)
 
     # ---- 5) optional overlay tint ----
-    if overlay_hex and overlay_alpha > 0:
-        ov = np.full_like(out, _hex_to_bgr(overlay_hex), dtype=np.uint8)
-        out = cv2.addWeighted(out, 1.0, ov, float(overlay_alpha), 0)
+    if overlay_hex is not None and overlay_alpha is not None:
+        try:
+            a = float(overlay_alpha)
+        except Exception:
+            a = 0.0
+        a = max(0.0, min(1.0, a))
+        if a > 0.0:
+            ov = np.full_like(out, _hex_to_bgr(overlay_hex), dtype=np.uint8)
+            # cross‑fade: (1-a)*image + a*overlay
+            out = cv2.addWeighted(out, 1.0 - a, ov, a, 0.0)
 
     return out

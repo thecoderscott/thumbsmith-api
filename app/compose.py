@@ -13,8 +13,6 @@ from .helpers import load_font
 FRAME = (247, 186, 54)   # yellow
 DARK  = (50, 50, 50)     # bottom bar
 WHITE = (240, 240, 240)
-SE_L  = (247,186,54)     # S## colour
-SE_R  = (240,240,240)    # E## colour
 
 # Fonts
 ASSETS_DIR = Path(__file__).parent / "fonts"
@@ -65,7 +63,7 @@ def build_thumbnail_png(
 
     # Image area (white rounded panel)
     img_box = (image_padding, image_padding, inner_w, inner_h)
-    d.rounded_rectangle(img_box, radius=24, fill=(255,255,255))
+    d.rounded_rectangle(img_box, radius=24, fill=edge_color_hex)
 
     # Rounded mask so the image also has rounded corners
     mask = Image.new("L", (inner_w, inner_h), 0)
@@ -92,9 +90,9 @@ def build_thumbnail_png(
     y = (inner_h - bar_h) + (bar_h - L_h) // 2
     im.paste(logo_r, (x, y), logo_r)
 
-    # Title (left side of bar)
-    tx = bar_box[0] + 24
-    ty = bar_box[1] + (bar_h - 64) // 2
+    # Title
+    gx = image_padding + 24
+    gy = image_padding + 24
 
     if game_logo_bytes is not None:
         arr = np.frombuffer(game_logo_bytes, np.uint8)
@@ -109,17 +107,13 @@ def build_thumbnail_png(
         g_logo_w = max(1, int(g_logo.width * scale))
         g_logo_r = g_logo.resize((g_logo_w, target_h), Image.LANCZOS)
 
-        # position inside the white panel
-        gx = image_padding + 24
-        gy = image_padding + 24
-
         # safety: if very short canvases, keep clear of the bar
         if gy + target_h > H - bar_h - image_padding:
             gy = max(image_padding, (H - bar_h - image_padding) - target_h)
 
         im.paste(g_logo_r, (gx, gy), g_logo_r)
     elif title:
-        d.text((tx, ty), title.upper(), font=TITLE_FONT, fill=WHITE)
+        d.text((gx, gy), title.upper(), font=TITLE_FONT, fill=WHITE)
 
     # S/E (right aligned)
     left = f"S{int(season):02d} "
@@ -131,12 +125,12 @@ def build_thumbnail_png(
     y = bar_box[1] + (bar_h - 48) // 2
 
     # tiny shadow
-    for dx, dy in ((1, 0), (0, 1), (1, 1)):
+    for dx, dy in ((2, 0), (0, 2), (4, 4)):
         d.text((start_x + dx, y + dy), left, font=SE_FONT, fill=(0, 0, 0))
         d.text((start_x + lx + gap + dx, y + dy), right, font=SE_FONT, fill=(0, 0, 0))
 
-    d.text((start_x, y), left, font=SE_FONT, fill=SE_L)
-    d.text((start_x + lx + gap, y), right, font=SE_FONT, fill=SE_R)
+    d.text((start_x, y), left, font=SE_FONT, fill=edge_color_hex)
+    d.text((start_x + lx + gap, y), right, font=SE_FONT, fill=WHITE)
 
     # Return PNG bytes
     buf = BytesIO()
