@@ -39,6 +39,7 @@ def build_thumbnail_png(
     title: Optional[str] = None,
     game_logo_bytes: Optional[bytes] = None,
     size: Tuple[int,int] = (1280, 720),
+    edge_color_hex: str = FRAME,
     **style_kwargs,
 ) -> bytes:
     W, H = size
@@ -60,7 +61,7 @@ def build_thumbnail_png(
     d  = ImageDraw.Draw(im)
 
     # Outer rounded frame
-    d.rectangle((0, 0, W, H), fill=FRAME)
+    d.rectangle((0, 0, W, H), fill=edge_color_hex)
 
     # Image area (white rounded panel)
     img_box = (image_padding, image_padding, inner_w, inner_h)
