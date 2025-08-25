@@ -33,6 +33,9 @@ def comicify(
     edge_alpha = _clamp01(edge_alpha)
     overlay_alpha = _clamp01(overlay_alpha)
 
+    if style == StyleEnum.photo:
+        return im_bgr.copy()
+
     """
     Cel-shaded comic look with configurable edge colour/opacity and optional overlay.
     style: "game" | "photo" | "avatar"
@@ -49,8 +52,9 @@ def comicify(
         }[strength]
     elif style == StyleEnum.avatar:
         params = dict(k_colors=8, band_levels=5, edge_th=(80, 160), min_area=10, thicken=2, sat_gain=1.15, gamma=1.05)
-    else:  # photo (subtle defaults; adjust if you want strength here too)
-        params = dict(k_colors=12, band_levels=6, edge_th=(70, 140), min_area=60, thicken=1, sat_gain=1.12, gamma=1.12)
+    else:
+        # Unknown style? Do nothing.
+        return im_bgr.copy()
 
     k_colors = params["k_colors"]
     band_levels = params["band_levels"]
