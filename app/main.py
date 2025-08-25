@@ -16,6 +16,7 @@ app.add_middleware(
         "http://localhost:5173",
         "https://coderscott.dev",
         "https://api.coderscott.dev",
+        "https://thumbsmith.coderscott.dev",
     ],
     allow_methods=["*"],
     allow_headers=["*"],
