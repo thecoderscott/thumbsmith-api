@@ -3,12 +3,24 @@ import cv2
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 
 from .compose import build_thumbnail_png
 from .enums import StyleEnum, StrengthEnum
 
 app = FastAPI(title="ThumbGen API", version="0.3.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://coderscott.dev",
+        "https://api.coderscott.dev",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
+)
 ALLOWED = {"image/png", "image/jpeg"}
 
 @app.get("/health")
