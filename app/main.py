@@ -24,18 +24,40 @@ app.add_middleware(
 )
 ALLOWED = {"image/png", "image/jpeg"}
 
+def to_optional_int(v: Optional[str], name: str) -> Optional[int]:
+    if v is None:
+        return None
+    s = str(v).strip().lower()
+    if s in ("", "null", "none"):
+        return None
+    try:
+        return int(s)
+    except ValueError:
+        raise HTTPException(400, detail=f"{name} must be an integer or empty")
+
 @app.get("/health")
 def health():
     return {"ok": True}
+
+@app.get("/__env")
+def env():
+    import sys, pydantic, fastapi
+    return {
+        "python": sys.executable,
+        "version": sys.version,
+        "pydantic": getattr(pydantic, "__version__", "unknown"),
+        "fastapi": getattr(fastapi, "__version__", "unknown"),
+        "sys_path_head": sys.path[:3],
+    }
 
 @app.post("/v1/generate", response_class=Response)
 async def generate(
     screenshot: UploadFile = File(...),
     logo: UploadFile = File(...),
-    season: int = Form(...),
-    episode: int = Form(...),
     game_logo: Optional[bytes] = File(None),
-    title: Optional[str] = Form(default=None),
+    title: Optional[str] = Form(None, description="title or empty"),
+    season_raw: Optional[str] = Form(None, description="integer or empty"),
+    episode_raw: Optional[str] = Form(None, description="integer or empty"),
     style: StyleEnum = Form(StyleEnum.game),
     strength: StrengthEnum = Form(StrengthEnum.normal),
 
@@ -56,6 +78,8 @@ async def generate(
     game_logo_bytes = game_logo if game_logo else None
 
     # Sanitise inputs
+    season = to_optional_int(season_raw, "season")
+    episode = to_optional_int(episode_raw, "episode")
     edge_color = edge_color or None
     edge_alpha = edge_alpha or None
     overlay_color = overlay_color or None

@@ -32,8 +32,8 @@ def _paste_cover(dst: Image.Image, src: Image.Image, box: Tuple[int,int,int,int]
 def build_thumbnail_png(
     screenshot_bytes: bytes,
     logo_bytes: bytes,
-    season: int,
-    episode: int,
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
     title: Optional[str] = None,
     game_logo_bytes: Optional[bytes] = None,
     size: Tuple[int,int] = (1280, 720),
@@ -116,21 +116,32 @@ def build_thumbnail_png(
         d.text((gx, gy), title.upper(), font=TITLE_FONT, fill=WHITE)
 
     # S/E (right aligned)
-    left = f"S{int(season):02d} "
-    right = f"E{int(episode):02d}"
-    lx = d.textlength(left, font=SE_FONT)
-    rx = d.textlength(right, font=SE_FONT)
+    left = right = None
+    lx = rx = 0
+
+    if season is not None:
+        left = f"S{season:02d}"
+        lx = d.textlength(left, font=SE_FONT)
+
+    if episode is not None:
+        right = f"E{episode:02d}"
+        rx = d.textlength(right, font=SE_FONT)
+
     gap = 4
     start_x = bar_box[2] - 24 - (lx + gap + rx)
     y = bar_box[1] + (bar_h - 48) // 2
 
     # tiny shadow
     for dx, dy in ((2, 0), (0, 2), (4, 4)):
-        d.text((start_x + dx, y + dy), left, font=SE_FONT, fill=(0, 0, 0))
-        d.text((start_x + lx + gap + dx, y + dy), right, font=SE_FONT, fill=(0, 0, 0))
+        if left:
+            d.text((start_x + dx, y + dy), left, font=SE_FONT, fill=(0, 0, 0))
+        if right:
+            d.text((start_x + lx + gap + dx, y + dy), right, font=SE_FONT, fill=(0, 0, 0))
 
-    d.text((start_x, y), left, font=SE_FONT, fill=edge_color_hex)
-    d.text((start_x + lx + gap, y), right, font=SE_FONT, fill=WHITE)
+    if left:
+        d.text((start_x, y), left, font=SE_FONT, fill=edge_color_hex)
+    if right:
+        d.text((start_x + lx + gap, y), right, font=SE_FONT, fill=WHITE)
 
     # Return PNG bytes
     buf = BytesIO()
